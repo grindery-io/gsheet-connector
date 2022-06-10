@@ -1,5 +1,15 @@
+import requests
+import gspread
+import pandas as pd
 from django.shortcuts import render, redirect
 from django.http import Http404
+from oauth2client.service_account import ServiceAccountCredentials
+
+
+scope = ['https://www.googleapis.com/auth/spreadsheets']
+workbook_key = '1GAWEb_N85lECy6mZG7GclYLSuqFvRvbsmrpzBqVP8qc'
+credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+gc = gspread.authorize(credentials)
 
 
 def index(request):
@@ -22,3 +32,21 @@ def game(request, room_code):
         "room_code": room_code
     }
     return render(request, "game.html", context)
+
+
+def get_sheet_data(spread_sheet_id, sheet_id):
+    sheet = gc.open_by_key(spread_sheet_id)
+    sheet_instance = sheet.get_worksheet(sheet_id)
+
+    records_df = pd.DataFrame.from_dict(sheet_instance.get_all_records())
+    return records_df.to_json(orient="split")
+
+
+def get_sheet_data_by_token(spread_sheet_id, sheet_id, access_token):
+    url = "https://sheets.googleapis.com/v4/spreadsheets/{}".format(spread_sheet_id)
+    header = {
+        'Authorization': 'Bearer ' + 'AIzaSyAqEpkH-jhLwyzOZC_8SMdDnNpcEC0cVz0',
+        'Content-Type': 'application/json'
+    }
+    response = requests.get(url, headers=header)
+    return response
