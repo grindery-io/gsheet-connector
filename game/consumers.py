@@ -1,7 +1,7 @@
 import json
 import asyncio
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from .views import get_sheet_data, get_number_of_rows, get_new_rows
+from .views import get_sheet_data, get_number_of_rows, get_new_rows, get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token
 
 
 class NewSpreadsheetTrigger:
@@ -18,13 +18,17 @@ class NewSpreadsheetTrigger:
         session_id = params['sessionId']
         spreadsheet_id = params['fields']['spreadsheetId']
         sheet_id = params['fields']['sheetId']
-        number_of_rows = get_number_of_rows(spreadsheet_id, sheet_id)
+        access_token = params['credentials']['access_token']
+        # number_of_rows = get_number_of_rows(spreadsheet_id, sheet_id)
+        number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
 
         while self.socket.connected:
-            check_number_of_row = get_number_of_rows(spreadsheet_id, sheet_id)
+            # check_number_of_row = get_number_of_rows(spreadsheet_id, sheet_id)
+            check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
             # new_row = xxx
             if check_number_of_row > number_of_rows:
-                response = get_new_rows(spreadsheet_id, sheet_id, check_number_of_row - number_of_rows)
+                # response = get_new_rows(spreadsheet_id, sheet_id, check_number_of_row - number_of_rows)
+                response = get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows)
                 number_of_rows = check_number_of_row
                 await self.socket.send_json({
                     'jsonrpc': '2.0',
