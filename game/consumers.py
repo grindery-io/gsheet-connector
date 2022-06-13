@@ -1,18 +1,62 @@
 import json
-import schedule
-from crontab import CronTab
-from channels.generic.websocket import AsyncWebsocketConsumer
-from .views import get_sheet_data
+import asyncio
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from .views import get_sheet_data, get_number_of_rows, get_new_rows
 
 
-class SocketAdapter(AsyncWebsocketConsumer):
+class NewSpreadsheetTrigger:
+    def __init__(self, socket, request):
+        self.socket = socket
+        self.request = request
+
+    def start(self):
+        return asyncio.create_task(NewSpreadsheetTrigger.main(self))
+
+    async def main(self):
+        request = json.loads(self.request)
+        params = request.get("params", None)
+        session_id = params['sessionId']
+        spreadsheet_id = params['fields']['spreadsheetId']
+        sheet_id = params['fields']['sheetId']
+        number_of_rows = get_number_of_rows(spreadsheet_id, sheet_id)
+
+        while self.socket.connected:
+            check_number_of_row = get_number_of_rows(spreadsheet_id, sheet_id)
+            # new_row = xxx
+            if check_number_of_row > number_of_rows:
+                response = get_new_rows(spreadsheet_id, sheet_id, check_number_of_row - number_of_rows)
+                number_of_rows = check_number_of_row
+                await self.socket.send_json({
+                    'jsonrpc': '2.0',
+                    'method': 'notifySignal',
+                    'params': {
+                        'key': 'googleSheetNewRowTrigger',
+                        'sessionId': session_id,
+                        'payload': {
+                            'spreadsheetId': spreadsheet_id,
+                            'sheetId': sheet_id,
+                            'row': response,
+                        }
+                    }
+                })
+            await asyncio.sleep(5)
+
+
+class SocketAdapter(AsyncJsonWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.background_tasks = set()
+        self.connected = False
+
     async def connect(self):
+        self.connected = True
         await self.accept()
 
     async def disconnect(self, close_code):
+        self.connected = False
         print('-----socket disconnected-----')
 
-    async def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, text_data=None, bytes_data=None, **kwargs):
         request = json.loads(text_data)
         method = request.get("method", None)
         params = request.get("params", None)
@@ -26,22 +70,13 @@ class SocketAdapter(AsyncWebsocketConsumer):
         access_token = params['credentials']['access_token']
 
         if method == 'setupSignal':
-            setup_signal_response = {
+            self.background_tasks.add(NewSpreadsheetTrigger(self, text_data).start())
+            response = {
                 'jsonrpc': '2.0',
-                'method': 'notifySignal',
-                'params': {
-                    'key': 'googleSheetNewRowTrigger',
-                    'sessionId': session_id,
-                    'payload': {
-                        'spreadsheetId': spreadsheet_id,
-                        'sheetId': sheet_id,
-                        'response': json.loads(get_sheet_data(spreadsheet_id, sheet_id))
-                    }
-                }
+                'result': {},
+                'id': id
             }
-            # create_cron_job(spreadsheet_id)
-            create_schedule_job()
-            await self.send(text_data=json.dumps(setup_signal_response))
+            await self.send_json(response)
 
         if method == 'runAction':
             run_action_response = {
@@ -53,21 +88,12 @@ class SocketAdapter(AsyncWebsocketConsumer):
                 },
                 'id': id
             }
-            await self.send(text_data=json.dumps(run_action_response))
+            await self.send_json(run_action_response)
 
         if method == 'ping':
-            await self.accept()
-
-    async def send_message(self, res):
-        """ Receive message from room group """
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps(res))
-
-
-def create_cron_job(spread_sheet_id):
-    # cron = CronTab(tab="""* * * * * command""")
-    cron = CronTab(user="root")
-    job = cron.new(command='python scheduleCron.py')
-    job.minute.every(1)
-
-    cron.write()
+            response = {
+                'jsonrpc': '2.0',
+                'result': {},
+                'id': id
+            }
+            await self.send_json(response)
