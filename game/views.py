@@ -120,7 +120,29 @@ class FileListView(GenericAPIView):
                 },
                 status=status.HTTP_201_CREATED
             )
+        elif spreadsheet is not None and worksheet is not None:
+            worksheet_response = requests.get(url.format(spreadsheet, worksheet), headers=get_spreadsheets_header)
+            worksheet_data = json.loads(worksheet_response.content)['values']
+            out_put_fields = []
+            sample_array = {}
+            for data, last_data in zip(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
+                out_put_fields.append({
+                    "key": data,
+                    "type": "string"
+                })
+                sample_array[data] = last_data
 
+            return Response(
+                {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {
+                        "outputFields": out_put_fields,
+                        "sample": sample_array
+                    }
+                },
+                status=status.HTTP_201_CREATED
+            )
 
 
 class SheetListView(GenericAPIView):
