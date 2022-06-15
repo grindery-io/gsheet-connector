@@ -25,16 +25,22 @@ class FieldDataSerializer(serializers.Serializer):
 class CredentialsSerializer(serializers.Serializer):
     access_token = serializers.CharField(required=False)
     refresh_token = serializers.CharField(required=False)
+    scope = serializers.CharField(required=False)
+    token_type = serializers.CharField(required=False)
 
     class Meta:
-        fields = ("access_token", "refresh_token")
+        fields = ("access_token", "refresh_token", "scope", "token_type")
 
     def validate(self, attrs):
         access_token = attrs.get("access_token")
         refresh_token = attrs.get("refresh_token")
+        scope = attrs.get("scope")
+        token_type = attrs.get("token_type")
         res = {
             'access_token': access_token,
-            'refresh_token': refresh_token
+            'refresh_token': refresh_token,
+            'scope': scope,
+            'token_type': token_type
         }
         return res
 

@@ -31,6 +31,12 @@ class FileListView(GenericAPIView):
         worksheet = params['fieldData']['worksheet']
         access_token = params['credentials']['access_token']
         refresh_token = params['credentials']['refresh_token']
+        scope = params['credentials']['scope']
+        token_type = params['credentials']['token_type']
+        if token_type is None:
+            token_type = 'Bearer'
+        if scope is None:
+            scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file openid https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive'
 
         get_spreadsheets_url = 'https://www.googleapis.com/drive/v3/files/'
         get_spreadsheets_header = {
@@ -38,18 +44,22 @@ class FileListView(GenericAPIView):
             'Content-Type': 'application/json'
         }
         get_spreadsheets_params = {
-            'token_type': 'Bearer',
-            'scope': 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file openid https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive',
+            'token_type': token_type,
+            'scope': scope,
             'refresh_token': refresh_token
         }
 
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
-        spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
+        try:
+            spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
+        except:
+            spreadsheets_list = []
         spreadsheets_list_array = []
-        for item in spreadsheets_list:
-            spreadsheets_list_array.append({
-                **serialize_spreadsheet(item)
-            })
+        if spreadsheets_list:
+            for item in spreadsheets_list:
+                spreadsheets_list_array.append({
+                    **serialize_spreadsheet(item)
+                })
 
         if spreadsheet is None and worksheet is None:
             return Response(
@@ -80,12 +90,16 @@ class FileListView(GenericAPIView):
                 'Content-Type': 'application/json'
             }
             get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
-            sheets_list = json.loads(get_sheets_res.content)['sheets']
+            try:
+                sheets_list = json.loads(get_sheets_res.content)['sheets']
+            except:
+                sheets_list = []
             sheets_list_array = []
-            for sheet in sheets_list:
-                sheets_list_array.append({
-                    **serialize_worksheet(sheet)
-                })
+            if sheets_list:
+                for sheet in sheets_list:
+                    sheets_list_array.append({
+                        **serialize_worksheet(sheet)
+                    })
 
             return Response(
                 {
@@ -118,15 +132,19 @@ class FileListView(GenericAPIView):
             )
         elif spreadsheet is not None and worksheet is not None:
             worksheet_response = requests.get(url.format(spreadsheet, worksheet), headers=get_spreadsheets_header)
-            worksheet_data = json.loads(worksheet_response.content)['values']
+            try:
+                worksheet_data = json.loads(worksheet_response.content)['values']
+            except:
+                worksheet_data = []
             out_put_fields = []
             sample_array = {}
-            for data, last_data in zip(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
-                out_put_fields.append({
-                    "key": data,
-                    "type": "string"
-                })
-                sample_array[data] = last_data
+            if worksheet_data:
+                for data, last_data in zip(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
+                    out_put_fields.append({
+                        "key": data,
+                        "type": "string"
+                    })
+                    sample_array[data] = last_data
 
             return Response(
                 {

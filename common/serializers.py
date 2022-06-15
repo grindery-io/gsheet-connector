@@ -9,7 +9,7 @@ def serialize_spreadsheet(spreadsheet):
 
 def serialize_worksheet(worksheet):
     return {
-        "value": worksheet['properties']['sheetId'],
+        "value": worksheet['properties']['title'],
         "label":  worksheet['properties']['title'],
         "sample":  worksheet['properties']['sheetId'],
     }
