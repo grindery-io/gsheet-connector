@@ -10,11 +10,16 @@ https://docs.djangoproject.com/en/3.1/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
-from channels.auth import AuthMiddlewareStack
-from channels.routing import ProtocolTypeRouter, URLRouter
-import game.routing
+import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gsheet_connector.settings')
+django.setup()
+
+import game.routing
+
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+
 
 # application = get_asgi_application()
 application = ProtocolTypeRouter({
