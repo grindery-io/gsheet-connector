@@ -12,7 +12,6 @@ from common.serializers import serialize_worksheet, serialize_spreadsheet
 
 scope = ['https://www.googleapis.com/auth/spreadsheets']
 url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:Z1000?majorDimension=ROWS"
-workbook_key = '1GAWEb_N85lECy6mZG7GclYLSuqFvRvbsmrpzBqVP8qc'
 credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
 gc = gspread.authorize(credentials)
 
@@ -40,10 +39,7 @@ class FileListView(GenericAPIView):
         }
         get_spreadsheets_params = {
             'token_type': 'Bearer',
-            'scope': 'openid https: // www.googleapis.com / auth / drive'
-                     'https: // www.googleapis.com / auth / spreadsheets.readonly'
-                     'https: // www.googleapis.com / auth / userinfo.email'
-                     'https: // www.googleapis.com / auth / spreadsheets',
+            'scope': 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file openid https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive',
             'refresh_token': refresh_token
         }
 
