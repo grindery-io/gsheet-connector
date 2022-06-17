@@ -131,6 +131,23 @@ class FileListView(GenericAPIView):
                 status=status.HTTP_201_CREATED
             )
         elif spreadsheet is not None and worksheet is not None:
+            get_sheets_url = 'https://sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
+            get_sheets_header = {
+                'Authorization': 'Bearer ' + access_token,
+                'Content-Type': 'application/json'
+            }
+            get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
+            try:
+                sheets_list = json.loads(get_sheets_res.content)['sheets']
+            except:
+                sheets_list = []
+            sheets_list_array = []
+            if sheets_list:
+                for sheet in sheets_list:
+                    sheets_list_array.append({
+                        **serialize_worksheet(sheet)
+                    })
+
             worksheet_response = requests.get(url.format(spreadsheet, worksheet), headers=get_spreadsheets_header)
             try:
                 worksheet_data = json.loads(worksheet_response.content)['values']
@@ -151,6 +168,26 @@ class FileListView(GenericAPIView):
                     "jsonrpc": "2.0",
                     "id": request_id,
                     "result": {
+                        "inputFields": [
+                            {
+                                "key": "spreadsheet",
+                                "label": "Spreadsheet",
+                                "helpText": "",
+                                "type": "string",
+                                "required": True,
+                                "placeholder": "Choose sheet...",
+                                "choices": spreadsheets_list_array
+                            },
+                            {
+                                "key": "worksheet",
+                                "label": "Worksheet",
+                                "helpText": "",
+                                "type": "string",
+                                "required": True,
+                                "placeholder": "Choose sheet...",
+                                "choices": sheets_list_array
+                            }
+                        ],
                         "outputFields": out_put_fields,
                         "sample": sample_array
                     }
