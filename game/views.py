@@ -158,10 +158,11 @@ class FileListView(GenericAPIView):
             if worksheet_data:
                 for data, last_data in zip(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
                     out_put_fields.append({
-                        "key": data,
+                        "key": data.replace(" ", "_"),
+                        "label": data,
                         "type": "string"
                     })
-                    sample_array[data] = last_data
+                    sample_array[data.replace(" ", "_")] = last_data
 
             return Response(
                 {
