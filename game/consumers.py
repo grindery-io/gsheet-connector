@@ -1,5 +1,6 @@
 import json
 import asyncio
+import requests
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .views import get_sheet_data, get_number_of_rows, get_new_rows, get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token
 
@@ -68,10 +69,11 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         key = params['key']
         session_id = params['sessionId']
         credentials = params['credentials']
-        spreadsheet_id = params['fields']['spreadsheetId']
-        sheet_id = params['fields']['sheetId']
+        fields = params['fields']
+        spreadsheet_id = fields['spreadsheetId']
+        sheet_id = fields['sheetId']
 
-        access_token = params['credentials']['access_token']
+        access_token = credentials['access_token']
 
         if method == 'setupSignal':
             self.background_tasks.add(NewSpreadsheetTrigger(self, text_data).start())
@@ -83,12 +85,28 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             await self.send_json(response)
 
         if method == 'runAction':
+            header = {
+                'Authorization': 'Bearer ' + access_token,
+                'Content-Type': 'application/json'
+            }
+            url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:Z1:append?valueInputOption=USER_ENTERED".format(
+                spreadsheet_id, sheet_id)
+
+            values = []
+            for key in fields:
+                if key.startswith('_'):
+                    # print(key.replace("_", " ").strip())
+                    values.append(fields[key])
+            payload = {"range": "{}!A1:Z1".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
+            res = requests.post(headers=header, url=url, json=payload)
+            if res.status_code != 200:
+                fields = {}
             run_action_response = {
                 'jsonrpc': '2.0',
                 'result': {
                     'key': 'googleSheetNewRowAction',
                     'sessionId': session_id,
-                    'payload': {}
+                    'payload': fields
                 },
                 'id': id
             }
