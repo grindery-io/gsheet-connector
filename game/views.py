@@ -57,9 +57,10 @@ class FileListView(GenericAPIView):
         spreadsheets_list_array = []
         if spreadsheets_list:
             for item in spreadsheets_list:
-                spreadsheets_list_array.append({
-                    **serialize_spreadsheet(item)
-                })
+                if item['mimeType'] == 'application/vnd.google-apps.spreadsheet':
+                    spreadsheets_list_array.append({
+                        **serialize_spreadsheet(item)
+                    })
 
         if spreadsheet is None and worksheet is None:
             return Response(
