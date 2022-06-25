@@ -46,7 +46,8 @@ class FileListView(GenericAPIView):
         get_spreadsheets_params = {
             'token_type': token_type,
             'scope': scope,
-            'refresh_token': refresh_token
+            'refresh_token': refresh_token,
+            'pageSize': 1000
         }
 
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
