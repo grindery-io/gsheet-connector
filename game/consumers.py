@@ -66,14 +66,15 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         method = request.get("method", None)
         params = request.get("params", None)
         id = request.get("id", None)
-        key = params['key']
-        session_id = params['sessionId']
-        credentials = params['credentials']
-        fields = params['fields']
-        spreadsheet_id = fields['spreadsheet']
-        sheet_id = fields['worksheet']
+        if params is not None and params is {}:
+            key = params['key']
+            session_id = params['sessionId']
+            credentials = params['credentials']
+            fields = params['fields']
+            spreadsheet_id = fields['spreadsheet']
+            sheet_id = fields['worksheet']
 
-        access_token = credentials['access_token']
+            access_token = credentials['access_token']
 
         if method == 'setupSignal':
             self.background_tasks.add(NewSpreadsheetTrigger(self, text_data).start())
