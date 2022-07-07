@@ -17,8 +17,8 @@ class NewSpreadsheetTrigger:
         request = json.loads(self.request)
         params = request.get("params", None)
         session_id = params['sessionId']
-        spreadsheet_id = params['fields']['spreadsheetId']
-        sheet_id = params['fields']['sheetId']
+        spreadsheet_id = params['fields']['spreadsheet']
+        sheet_id = params['fields']['worksheet']
         access_token = params['credentials']['access_token']
         # number_of_rows = get_number_of_rows(spreadsheet_id, sheet_id)
         number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
@@ -38,8 +38,8 @@ class NewSpreadsheetTrigger:
                         'key': 'googleSheetNewRowTrigger',
                         'sessionId': session_id,
                         'payload': {
-                            'spreadsheetId': spreadsheet_id,
-                            'sheetId': sheet_id,
+                            'spreadsheet': spreadsheet_id,
+                            'worksheet': sheet_id,
                             'row': response,
                         }
                     }
@@ -70,8 +70,8 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         session_id = params['sessionId']
         credentials = params['credentials']
         fields = params['fields']
-        spreadsheet_id = fields['spreadsheetId']
-        sheet_id = fields['sheetId']
+        spreadsheet_id = fields['spreadsheet']
+        sheet_id = fields['worksheet']
 
         access_token = credentials['access_token']
 
