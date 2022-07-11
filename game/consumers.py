@@ -66,6 +66,12 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         method = request.get("method", None)
         params = request.get("params", None)
         id = request.get("id", None)
+        access_token = ''
+        spreadsheet_id = ''
+        sheet_id = ''
+        session_id = ''
+        fields = ''
+
         if params is not None and params is {}:
             key = params['key']
             session_id = params['sessionId']
@@ -99,9 +105,12 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     # print(key.replace("_", " ").strip())
                     values.append(fields[key])
             payload = {"range": "{}!A1:Z1".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
-            res = requests.post(headers=header, url=url, json=payload)
-            if res.status_code != 200:
-                fields = {}
+            try:
+                res = requests.post(headers=header, url=url, json=payload)
+                if res.status_code != 200:
+                    fields = {}
+            except Exception:
+                fields = 'Error'
             run_action_response = {
                 'jsonrpc': '2.0',
                 'result': {
