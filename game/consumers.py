@@ -38,11 +38,7 @@ class NewSpreadsheetTrigger:
                         'params': {
                             'key': 'googleSheetNewRowTrigger',
                             'sessionId': session_id,
-                            'payload': {
-                                'spreadsheet': spreadsheet_id,
-                                'worksheet': sheet_id,
-                                'row': row,
-                            }
+                            'row': row
                         }
                     })
             await asyncio.sleep(5)
