@@ -31,19 +31,20 @@ class NewSpreadsheetTrigger:
                 # response = get_new_rows(spreadsheet_id, sheet_id, check_number_of_row - number_of_rows)
                 response = get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows)
                 number_of_rows = check_number_of_row
-                await self.socket.send_json({
-                    'jsonrpc': '2.0',
-                    'method': 'notifySignal',
-                    'params': {
-                        'key': 'googleSheetNewRowTrigger',
-                        'sessionId': session_id,
-                        'payload': {
-                            'spreadsheet': spreadsheet_id,
-                            'worksheet': sheet_id,
-                            'row': response,
+                for row in response:
+                    await self.socket.send_json({
+                        'jsonrpc': '2.0',
+                        'method': 'notifySignal',
+                        'params': {
+                            'key': 'googleSheetNewRowTrigger',
+                            'sessionId': session_id,
+                            'payload': {
+                                'spreadsheet': spreadsheet_id,
+                                'worksheet': sheet_id,
+                                'row': row,
+                            }
                         }
-                    }
-                })
+                    })
             await asyncio.sleep(5)
 
 

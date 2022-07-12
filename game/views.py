@@ -261,7 +261,13 @@ def get_new_rows_by_token(spread_sheet_id, sheet_id, access_token, number_of_add
     }
     res = requests.get(url.format(spread_sheet_id, sheet_id), headers=header)
     rows = json.loads(res.content)['values']
-    return rows[len(rows) - number_of_added_rows: len(rows)]
+    rows_objects = []
+    for row in rows[len(rows) - number_of_added_rows: len(rows)]:
+        row_object = {}
+        for first_row, any_row in zip(rows[0], row):
+            row_object[first_row] = any_row
+        rows_objects.append(row_object)
+    return rows_objects
 
 
 def get_number_of_rows(spread_sheet_id, sheet_id):
