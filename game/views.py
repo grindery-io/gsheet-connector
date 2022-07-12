@@ -265,7 +265,7 @@ def get_new_rows_by_token(spread_sheet_id, sheet_id, access_token, number_of_add
     for row in rows[len(rows) - number_of_added_rows: len(rows)]:
         row_object = {}
         for first_row, any_row in zip(rows[0], row):
-            row_object[first_row] = any_row
+            row_object[first_row.replace(" ", "_")] = any_row
         rows_objects.append(row_object)
     return rows_objects
 
