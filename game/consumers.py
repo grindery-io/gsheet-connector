@@ -38,7 +38,7 @@ class NewSpreadsheetTrigger:
                         'params': {
                             'key': 'googleSheetNewRowTrigger',
                             'sessionId': session_id,
-                            'row': row
+                            'payload': row
                         }
                     })
             await asyncio.sleep(5)
