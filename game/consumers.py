@@ -1,4 +1,5 @@
 import json
+import os
 import asyncio
 import requests
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -19,8 +20,22 @@ class NewSpreadsheetTrigger:
         session_id = params['sessionId']
         spreadsheet_id = params['fields']['spreadsheet']
         sheet_id = params['fields']['worksheet']
-        access_token = params['credentials']['access_token']
+        access_token = ''
         # number_of_rows = get_number_of_rows(spreadsheet_id, sheet_id)
+
+        try:
+            refresh_token = params['credentials']['refresh_token']
+            credentials_params = {
+                'client_id': os.environ['client_id'],
+                'client_secret': os.environ['client_secret'],
+                'grant_type': 'refresh_token',
+                'refresh_token': refresh_token,
+            }
+            res = requests.post(url=os.environ['token_uri'], params=credentials_params)
+            access_token = json.loads(res.content)['access_token']
+        except Exception:
+            access_token = params['credentials']['access_token']
+
         number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
 
         while self.socket.connected:
@@ -41,7 +56,7 @@ class NewSpreadsheetTrigger:
                             'payload': row
                         }
                     })
-            await asyncio.sleep(5)
+            await asyncio.sleep(60)
 
 
 class SocketAdapter(AsyncJsonWebsocketConsumer):
