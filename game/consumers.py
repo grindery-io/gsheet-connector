@@ -39,6 +39,18 @@ class NewSpreadsheetTrigger:
         number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
 
         while self.socket.connected:
+            try:
+                refresh_token = params['credentials']['refresh_token']
+                credentials_params = {
+                    'client_id': os.environ['client_id'],
+                    'client_secret': os.environ['client_secret'],
+                    'grant_type': 'refresh_token',
+                    'refresh_token': refresh_token,
+                }
+                res = requests.post(url=os.environ['token_uri'], params=credentials_params)
+                access_token = json.loads(res.content)['access_token']
+            except Exception:
+                access_token = params['credentials']['access_token']
             # check_number_of_row = get_number_of_rows(spreadsheet_id, sheet_id)
             check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
             # new_row = xxx
