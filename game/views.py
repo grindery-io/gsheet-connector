@@ -1,19 +1,14 @@
 import requests
-import gspread
 import json
 from rest_framework.response import Response
 from rest_framework import status
-import pandas as pd
 from rest_framework.generics import GenericAPIView
-from oauth2client.service_account import ServiceAccountCredentials
 
 from .serializers import ConnectorSerializer
 from common.serializers import serialize_worksheet, serialize_spreadsheet
 
 scope = ['https://www.googleapis.com/auth/spreadsheets']
 url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:Z1000?majorDimension=ROWS"
-credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
-gc = gspread.authorize(credentials)
 
 
 class FileListView(GenericAPIView):
@@ -221,21 +216,6 @@ class SheetListView(GenericAPIView):
         )
 
 
-def get_sheet_data(spread_sheet_id, sheet_id):
-    sheet = gc.open_by_key(spread_sheet_id)
-    sheet_instance = sheet.get_worksheet(sheet_id)
-    all_rows = sheet_instance.get_all_records()
-    records_df = pd.DataFrame.from_dict(all_rows)
-    return records_df.to_json(orient="split")
-
-
-def get_new_rows(spread_sheet_id, sheet_id, number_of_added_rows):
-    sheet = gc.open_by_key(spread_sheet_id)
-    sheet_instance = sheet.get_worksheet(sheet_id)
-    all_rows = sheet_instance.get_all_records()
-    return all_rows[len(all_rows) - number_of_added_rows:len(all_rows)]
-
-
 def get_sheet_data_by_token(spread_sheet_id, sheet_id, access_token):
     header = {
         'Authorization': 'Bearer ' + access_token,
@@ -268,9 +248,3 @@ def get_new_rows_by_token(spread_sheet_id, sheet_id, access_token, number_of_add
             row_object[first_row.replace(" ", "_")] = any_row
         rows_objects.append(row_object)
     return rows_objects
-
-
-def get_number_of_rows(spread_sheet_id, sheet_id):
-    sheet = gc.open_by_key(spread_sheet_id)
-    sheet_instance = sheet.get_worksheet(sheet_id)
-    return len(sheet_instance.get_all_records())

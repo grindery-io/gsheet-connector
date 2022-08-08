@@ -3,7 +3,7 @@ import os
 import asyncio
 import requests
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from .views import get_sheet_data, get_number_of_rows, get_new_rows, get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token
+from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token
 
 
 class NewSpreadsheetTrigger:
