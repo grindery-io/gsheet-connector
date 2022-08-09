@@ -9,6 +9,7 @@ from common.serializers import serialize_worksheet, serialize_spreadsheet
 
 scope = ['https://www.googleapis.com/auth/spreadsheets']
 url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:Z1000?majorDimension=ROWS"
+url_spread_sheet = "https://sheets.googleapis.com/v4/spreadsheets/{}/"
 
 
 class FileListView(GenericAPIView):
@@ -248,3 +249,25 @@ def get_new_rows_by_token(spread_sheet_id, sheet_id, access_token, number_of_add
             row_object[first_row.replace(" ", "_")] = any_row
         rows_objects.append(row_object)
     return rows_objects
+
+
+def get_number_of_sheets(spread_sheet_id, access_token):
+    header = {
+        'Authorization': 'Bearer ' + access_token,
+        'Content-Type': 'application/json'
+    }
+    res = requests.get(url_spread_sheet.format(spread_sheet_id), headers=header)
+    return len(json.loads(res.content)['sheets'])
+
+
+def get_new_sheets(spread_sheet_id, access_token, number_of_added_sheets):
+    header = {
+        'Authorization': 'Bearer ' + access_token,
+        'Content-Type': 'application/json'
+    }
+    res = requests.get(url_spread_sheet.format(spread_sheet_id), headers=header)
+    sheets = json.loads(res.content)['sheets']
+    sheets_object = []
+    for sheet in sheets[len(sheets) - number_of_added_sheets: len(sheets)]:
+        sheets_object.append(sheet["properties"]["title"])
+    return sheets_object

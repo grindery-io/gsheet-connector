@@ -3,7 +3,8 @@ import os
 import asyncio
 import requests
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token
+from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token, get_number_of_sheets,\
+    get_new_sheets
 
 
 class NewSpreadsheetTrigger:
@@ -21,7 +22,6 @@ class NewSpreadsheetTrigger:
         spreadsheet_id = params['fields']['spreadsheet']
         sheet_id = params['fields']['worksheet']
         access_token = ''
-        # number_of_rows = get_number_of_rows(spreadsheet_id, sheet_id)
 
         try:
             refresh_token = params['credentials']['refresh_token']
@@ -37,6 +37,7 @@ class NewSpreadsheetTrigger:
             access_token = params['credentials']['access_token']
 
         number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
+        number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
 
         while self.socket.connected:
             try:
@@ -51,13 +52,24 @@ class NewSpreadsheetTrigger:
                 access_token = json.loads(res.content)['access_token']
             except Exception:
                 access_token = params['credentials']['access_token']
-            # check_number_of_row = get_number_of_rows(spreadsheet_id, sheet_id)
             check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
-            # new_row = xxx
+            check_number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
             if check_number_of_row > number_of_rows:
-                # response = get_new_rows(spreadsheet_id, sheet_id, check_number_of_row - number_of_rows)
                 response = get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows)
                 number_of_rows = check_number_of_row
+                for row in response:
+                    await self.socket.send_json({
+                        'jsonrpc': '2.0',
+                        'method': 'notifySignal',
+                        'params': {
+                            'key': 'googleSheetNewRowTrigger',
+                            'sessionId': session_id,
+                            'payload': row
+                        }
+                    })
+            if check_number_of_sheets > number_of_sheets:
+                response = get_new_sheets(spreadsheet_id, access_token, check_number_of_sheets - number_of_sheets)
+                number_of_sheets = check_number_of_sheets
                 for row in response:
                     await self.socket.send_json({
                         'jsonrpc': '2.0',
