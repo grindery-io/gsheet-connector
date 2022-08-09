@@ -7,13 +7,13 @@ from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of
     get_new_sheets
 
 
-class NewSpreadsheetTrigger:
+class newSpreadsheetRowTrigger:
     def __init__(self, socket, request):
         self.socket = socket
         self.request = request
 
     def start(self):
-        return asyncio.create_task(NewSpreadsheetTrigger.main(self))
+        return asyncio.create_task(newSpreadsheetRowTrigger.main(self))
 
     async def main(self):
         request = json.loads(self.request)
@@ -37,7 +37,6 @@ class NewSpreadsheetTrigger:
             access_token = params['credentials']['access_token']
 
         number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
-        number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
 
         while self.socket.connected:
             try:
@@ -53,7 +52,6 @@ class NewSpreadsheetTrigger:
             except Exception:
                 access_token = params['credentials']['access_token']
             check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
-            check_number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
             if check_number_of_row > number_of_rows:
                 response = get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows)
                 number_of_rows = check_number_of_row
@@ -67,17 +65,65 @@ class NewSpreadsheetTrigger:
                             'payload': row
                         }
                     })
+            await asyncio.sleep(60)
+
+
+class newWorksheetTrigger:
+    def __init__(self, socket, request):
+        self.socket = socket
+        self.request = request
+
+    def start(self):
+        return asyncio.create_task(newWorksheetTrigger.main(self))
+
+    async def main(self):
+        request = json.loads(self.request)
+        params = request.get("params", None)
+        session_id = params['sessionId']
+        spreadsheet_id = params['fields']['spreadsheet']
+        sheet_id = params['fields']['worksheet']
+        access_token = ''
+
+        try:
+            refresh_token = params['credentials']['refresh_token']
+            credentials_params = {
+                'client_id': os.environ['client_id'],
+                'client_secret': os.environ['client_secret'],
+                'grant_type': 'refresh_token',
+                'refresh_token': refresh_token,
+            }
+            res = requests.post(url=os.environ['token_uri'], params=credentials_params)
+            access_token = json.loads(res.content)['access_token']
+        except Exception:
+            access_token = params['credentials']['access_token']
+
+        number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
+
+        while self.socket.connected:
+            try:
+                refresh_token = params['credentials']['refresh_token']
+                credentials_params = {
+                    'client_id': os.environ['client_id'],
+                    'client_secret': os.environ['client_secret'],
+                    'grant_type': 'refresh_token',
+                    'refresh_token': refresh_token,
+                }
+                res = requests.post(url=os.environ['token_uri'], params=credentials_params)
+                access_token = json.loads(res.content)['access_token']
+            except Exception:
+                access_token = params['credentials']['access_token']
+            check_number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
             if check_number_of_sheets > number_of_sheets:
                 response = get_new_sheets(spreadsheet_id, access_token, check_number_of_sheets - number_of_sheets)
                 number_of_sheets = check_number_of_sheets
-                for row in response:
+                for sheet in response:
                     await self.socket.send_json({
                         'jsonrpc': '2.0',
                         'method': 'notifySignal',
                         'params': {
-                            'key': 'googleSheetNewRowTrigger',
+                            'key': 'googleSheetNewWorksheetTrigger',
                             'sessionId': session_id,
-                            'payload': row
+                            'payload': sheet
                         }
                     })
             await asyncio.sleep(60)
@@ -107,9 +153,10 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         sheet_id = ''
         session_id = ''
         fields = ''
+        request_key = ''
 
         if params is not None and params is {}:
-            key = params['key']
+            request_key = params['key']
             session_id = params['sessionId']
             credentials = params['credentials']
             fields = params['fields']
@@ -119,7 +166,10 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             access_token = credentials['access_token']
 
         if method == 'setupSignal':
-            self.background_tasks.add(NewSpreadsheetTrigger(self, text_data).start())
+            if request_key == 'newSpreadsheetRow':
+                self.background_tasks.add(newSpreadsheetRowTrigger(self, text_data).start())
+            if request_key == 'newWorksheet':
+                self.background_tasks.add(newWorksheetTrigger(self, text_data).start())
             response = {
                 'jsonrpc': '2.0',
                 'result': {},
