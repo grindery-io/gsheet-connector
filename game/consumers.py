@@ -166,6 +166,7 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             access_token = credentials['access_token']
 
         if method == 'setupSignal':
+            print('--------------------key-------------- ', request_key)
             if request_key == 'newSpreadsheetRow':
                 self.background_tasks.add(newSpreadsheetRowTrigger(self, text_data).start())
             if request_key == 'newWorksheet':
