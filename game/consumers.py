@@ -166,16 +166,25 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             access_token = credentials['access_token']
 
         if method == 'setupSignal':
-            print('--------------------key-------------- ', request_key)
-            if request_key == 'newSpreadsheetRow':
-                self.background_tasks.add(newSpreadsheetRowTrigger(self, text_data).start())
-            if request_key == 'newWorksheet':
-                self.background_tasks.add(newWorksheetTrigger(self, text_data).start())
-            response = {
-                'jsonrpc': '2.0',
-                'result': {},
-                'id': id
-            }
+            if request_key and request_key != '':
+                if request_key == 'newSpreadsheetRow':
+                    self.background_tasks.add(newSpreadsheetRowTrigger(self, text_data).start())
+                if request_key == 'newWorksheet':
+                    self.background_tasks.add(newWorksheetTrigger(self, text_data).start())
+                response = {
+                    'jsonrpc': '2.0',
+                    'result': {},
+                    'id': id
+                }
+            else:
+                response = {
+                    'jsonrpc': '2.0',
+                    'error': {
+                        'code': 1,
+                        'message': 'operation key is required'
+                    },
+                    'id': id
+                }
             await self.send_json(response)
 
         if method == 'runAction':
