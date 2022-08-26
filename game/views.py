@@ -339,7 +339,7 @@ class FirstRowView(GenericAPIView):
             if worksheet_data:
                 for data, last_data in zip(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
                     out_put_fields.append({
-                        "key": data.replace(" ", "_"),
+                        "key": "_" + data.replace(" ", "_"),
                         "label": data,
                         "type": "string"
                     })
