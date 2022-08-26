@@ -15,10 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from game.views import FileListView, SheetListView
+from game.views import FileListView, SheetListView, FirstRowView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('file-list/', FileListView.as_view()),
+    path('getFirstRow/', FirstRowView.as_view()),
     path('sheet-list/', SheetListView.as_view()),
 ]
