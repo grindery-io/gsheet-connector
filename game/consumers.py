@@ -154,6 +154,7 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         session_id = ''
         fields = ''
         request_key = ''
+        print('-----------------', request)
 
         if params is not None and params != {}:
             request_key = params['key']
