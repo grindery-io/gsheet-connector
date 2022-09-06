@@ -193,7 +193,7 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                 'Authorization': 'Bearer ' + access_token,
                 'Content-Type': 'application/json'
             }
-            url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:Z1:append?valueInputOption=USER_ENTERED".format(
+            url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZZ99999:append?valueInputOption=USER_ENTERED".format(
                 spreadsheet_id, sheet_id)
 
             values = []
