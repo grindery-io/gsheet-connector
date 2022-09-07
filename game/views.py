@@ -146,6 +146,7 @@ class FileListView(GenericAPIView):
                         **serialize_worksheet(sheet)
                     })
 
+            print('------------------------url---------------------', url.format(spreadsheet, worksheet))
             worksheet_response = requests.get(url.format(spreadsheet, worksheet), headers=get_spreadsheets_header)
             try:
                 worksheet_data = json.loads(worksheet_response.content)['values']
