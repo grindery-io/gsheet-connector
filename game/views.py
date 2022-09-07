@@ -8,7 +8,7 @@ from .serializers import ConnectorSerializer
 from common.serializers import serialize_worksheet, serialize_spreadsheet
 
 scope = ['https://www.googleapis.com/auth/spreadsheets']
-url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:Z1000?majorDimension=ROWS"
+url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999?majorDimension=ROWS"
 url_spread_sheet = "https://sheets.googleapis.com/v4/spreadsheets/{}/"
 
 
@@ -146,7 +146,6 @@ class FileListView(GenericAPIView):
                         **serialize_worksheet(sheet)
                     })
 
-            print('------------------------url---------------------', url.format(spreadsheet, worksheet))
             worksheet_response = requests.get(url.format(spreadsheet, worksheet), headers=get_spreadsheets_header)
             try:
                 worksheet_data = json.loads(worksheet_response.content)['values']
