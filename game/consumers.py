@@ -55,7 +55,8 @@ class newSpreadsheetRowTrigger:
             print('--------Triggering--GSheet-------spreadsheet_id---', spreadsheet_id, '--------sheet_id-------', sheet_id)
             check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
             if check_number_of_row > number_of_rows:
-                print('--------New-row-added----------spreadsheet_id', spreadsheet_id, '-----sheet_id----', '-------added-------', check_number_of_row - number_of_rows)
+                print('--------New-row-added----------spreadsheet_id', spreadsheet_id, '-----sheet_id----', sheet_id,
+                      '-------added-------', check_number_of_row - number_of_rows)
                 response = get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows)
                 number_of_rows = check_number_of_row
                 for row in response:
