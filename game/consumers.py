@@ -174,9 +174,18 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         if method == 'setupSignal':
             if request_key and request_key != '':
                 if request_key == 'newSpreadsheetRow':
-                    self.background_tasks.add(newSpreadsheetRowTrigger(self, text_data).start())
+                    task = newSpreadsheetRowTrigger(self, text_data).start()
                 if request_key == 'newWorksheet':
-                    self.background_tasks.add(newWorksheetTrigger(self, text_data).start())
+                    task = newWorksheetTrigger(self, text_data).start()
+                self.background_tasks.add(task)
+                def on_complete(t):
+                    try:
+                        t.result()
+                    except BaseException as e:
+                        print(request_key, ": Task raised error: ", e)
+                    if self.connected:
+                        self.close()
+                task.add_done_callback(on_complete)
                 response = {
                     'jsonrpc': '2.0',
                     'result': {},
