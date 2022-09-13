@@ -181,10 +181,10 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                 def on_complete(t):
                     try:
                         t.result()
-                    except e:
+                    except BaseException as e:
                         print(request_key, ": Task raised error: ", e)
-                        if self.connected:
-                            self.close()
+                    if self.connected:
+                        self.close()
                 task.add_done_callback(on_complete)
                 response = {
                     'jsonrpc': '2.0',
