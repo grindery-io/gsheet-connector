@@ -8,7 +8,7 @@ from .serializers import ConnectorSerializer
 from common.serializers import serialize_worksheet, serialize_spreadsheet
 
 scope = ['https://www.googleapis.com/auth/spreadsheets']
-url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999?majorDimension=ROWS"
+url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
 url_spread_sheet = "https://sheets.googleapis.com/v4/spreadsheets/{}/"
 
 
