@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 from rest_framework.response import Response
@@ -7,9 +8,11 @@ from rest_framework.generics import GenericAPIView
 from .serializers import ConnectorSerializer
 from common.serializers import serialize_worksheet, serialize_spreadsheet
 
+from .request_prefix import REQUEST_PREFIX
+
 scope = ['https://www.googleapis.com/auth/spreadsheets']
-url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
-url_spread_sheet = "https://sheets.googleapis.com/v4/spreadsheets/{}/"
+url = REQUEST_PREFIX + "sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
+url_spread_sheet = REQUEST_PREFIX + "sheets.googleapis.com/v4/spreadsheets/{}/"
 
 
 class FileListView(GenericAPIView):
@@ -25,24 +28,16 @@ class FileListView(GenericAPIView):
         key = params['key']
         spreadsheet = params['fieldData']['spreadsheet']
         worksheet = params['fieldData']['worksheet']
-        access_token = params['credentials']['access_token']
-        refresh_token = params['credentials']['refresh_token']
-        scope = params['credentials']['scope']
-        token_type = params['credentials']['token_type']
-        if token_type is None:
-            token_type = 'Bearer'
-        if scope is None:
-            scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file openid https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive'
+        access_token = params['authentication']
+        token_type = 'Bearer'
 
-        get_spreadsheets_url = 'https://www.googleapis.com/drive/v3/files/'
+        get_spreadsheets_url = REQUEST_PREFIX + 'www.googleapis.com/drive/v3/files/'
         get_spreadsheets_header = {
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': 'application/json'
         }
         get_spreadsheets_params = {
             'token_type': token_type,
-            'scope': scope,
-            'refresh_token': refresh_token,
             'pageSize': 1000
         }
 
@@ -82,7 +77,7 @@ class FileListView(GenericAPIView):
             )
 
         elif spreadsheet is not None and worksheet is None:
-            get_sheets_url = 'https://sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
+            get_sheets_url = REQUEST_PREFIX + 'sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
             get_sheets_header = {
                 'Authorization': 'Bearer ' + access_token,
                 'Content-Type': 'application/json'
@@ -129,7 +124,7 @@ class FileListView(GenericAPIView):
                 status=status.HTTP_201_CREATED
             )
         elif spreadsheet is not None and worksheet is not None:
-            get_sheets_url = 'https://sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
+            get_sheets_url = REQUEST_PREFIX + 'sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
             get_sheets_header = {
                 'Authorization': 'Bearer ' + access_token,
                 'Content-Type': 'application/json'
@@ -208,14 +203,8 @@ class FirstRowView(GenericAPIView):
         key = params['key']
         spreadsheet = params['fieldData']['spreadsheet']
         worksheet = params['fieldData']['worksheet']
-        access_token = params['credentials']['access_token']
-        refresh_token = params['credentials']['refresh_token']
-        scope = params['credentials']['scope']
-        token_type = params['credentials']['token_type']
-        if token_type is None:
-            token_type = 'Bearer'
-        if scope is None:
-            scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file openid https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive'
+        access_token = params['authentication']
+        token_type = "Bearer"
 
         get_spreadsheets_url = 'https://www.googleapis.com/drive/v3/files/'
         get_spreadsheets_header = {
@@ -224,8 +213,6 @@ class FirstRowView(GenericAPIView):
         }
         get_spreadsheets_params = {
             'token_type': token_type,
-            'scope': scope,
-            'refresh_token': refresh_token,
             'pageSize': 1000
         }
 
@@ -265,7 +252,7 @@ class FirstRowView(GenericAPIView):
             )
 
         elif spreadsheet is not None and worksheet is None:
-            get_sheets_url = 'https://sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
+            get_sheets_url = REQUEST_PREFIX + 'sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
             get_sheets_header = {
                 'Authorization': 'Bearer ' + access_token,
                 'Content-Type': 'application/json'
@@ -312,7 +299,7 @@ class FirstRowView(GenericAPIView):
                 status=status.HTTP_201_CREATED
             )
         elif spreadsheet is not None and worksheet is not None:
-            get_sheets_url = 'https://sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
+            get_sheets_url = REQUEST_PREFIX + 'sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
             get_sheets_header = {
                 'Authorization': 'Bearer ' + access_token,
                 'Content-Type': 'application/json'
@@ -383,7 +370,7 @@ class SheetListView(GenericAPIView):
     def get(self, request):
         access_token = request.GET.get("access_token")
         spread_sheet_id = request.GET.get("spread_sheet_id")
-        get_sheets_url = 'https://sheets.googleapis.com/v4/spreadsheets/{}/'.format(spread_sheet_id)
+        get_sheets_url = REQUEST_PREFIX + 'sheets.googleapis.com/v4/spreadsheets/{}/'.format(spread_sheet_id)
         header = {
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': 'application/json'

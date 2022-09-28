@@ -6,6 +6,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token, get_number_of_sheets,\
     get_new_sheets
 
+from .request_prefix import REQUEST_PREFIX
 
 class newSpreadsheetRowTrigger:
     def __init__(self, socket, request):
@@ -21,37 +22,11 @@ class newSpreadsheetRowTrigger:
         session_id = params['sessionId']
         spreadsheet_id = params['fields']['spreadsheet']
         sheet_id = params['fields']['worksheet']
-        access_token = ''
-
-        try:
-            refresh_token = params['credentials']['refresh_token']
-            credentials_params = {
-                'client_id': os.environ['client_id'],
-                'client_secret': os.environ['client_secret'],
-                'grant_type': 'refresh_token',
-                'refresh_token': refresh_token,
-            }
-            res = requests.post(url=os.environ['token_uri'], params=credentials_params)
-            access_token = json.loads(res.content)['access_token']
-        except Exception:
-            access_token = params['credentials']['access_token']
+        access_token = params['authentication']
 
         number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
 
         while self.socket.connected:
-            try:
-                refresh_token = params['credentials']['refresh_token']
-                credentials_params = {
-                    'client_id': os.environ['client_id'],
-                    'client_secret': os.environ['client_secret'],
-                    'grant_type': 'refresh_token',
-                    'refresh_token': refresh_token,
-                }
-                res = requests.post(url=os.environ['token_uri'], params=credentials_params)
-                access_token = json.loads(res.content)['access_token']
-            except Exception:
-                access_token = params['credentials']['access_token']
-
             print('--------Triggering--GSheet-------spreadsheet_id---', spreadsheet_id, '--------sheet_id-------', sheet_id)
             check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
             if check_number_of_row < number_of_rows:
@@ -88,36 +63,11 @@ class newWorksheetTrigger:
         session_id = params['sessionId']
         spreadsheet_id = params['fields']['spreadsheet']
         sheet_id = params['fields']['worksheet']
-        access_token = ''
-
-        try:
-            refresh_token = params['credentials']['refresh_token']
-            credentials_params = {
-                'client_id': os.environ['client_id'],
-                'client_secret': os.environ['client_secret'],
-                'grant_type': 'refresh_token',
-                'refresh_token': refresh_token,
-            }
-            res = requests.post(url=os.environ['token_uri'], params=credentials_params)
-            access_token = json.loads(res.content)['access_token']
-        except Exception:
-            access_token = params['credentials']['access_token']
+        access_token = params['authentication']
 
         number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
 
         while self.socket.connected:
-            try:
-                refresh_token = params['credentials']['refresh_token']
-                credentials_params = {
-                    'client_id': os.environ['client_id'],
-                    'client_secret': os.environ['client_secret'],
-                    'grant_type': 'refresh_token',
-                    'refresh_token': refresh_token,
-                }
-                res = requests.post(url=os.environ['token_uri'], params=credentials_params)
-                access_token = json.loads(res.content)['access_token']
-            except Exception:
-                access_token = params['credentials']['access_token']
             check_number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
             if check_number_of_sheets > number_of_sheets:
                 response = get_new_sheets(spreadsheet_id, access_token, check_number_of_sheets - number_of_sheets)
@@ -164,12 +114,11 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         if params is not None and params != {}:
             request_key = params['key']
             session_id = params['sessionId']
-            credentials = params['credentials']
             fields = params['fields']
             spreadsheet_id = fields['spreadsheet']
             sheet_id = fields['worksheet']
 
-            access_token = credentials['access_token']
+            access_token = params['authentication']
 
         if method == 'setupSignal':
             if request_key and request_key != '':
@@ -207,8 +156,8 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                 'Authorization': 'Bearer ' + access_token,
                 'Content-Type': 'application/json'
             }
-            url = "https://sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
-                spreadsheet_id, sheet_id)
+            url = "{}sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
+                REQUEST_PREFIX, spreadsheet_id, sheet_id)
 
             values = []
             for key in fields:
