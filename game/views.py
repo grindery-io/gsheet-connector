@@ -85,7 +85,7 @@ class FileListView(GenericAPIView):
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
             except BaseException as e:
-                print("Error when getting sheet:", e, json.dumps(get_sheets_res.content))
+                print("Error when getting sheet:", e)
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
@@ -132,7 +132,7 @@ class FileListView(GenericAPIView):
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
             except BaseException as e:
-                print("Error when getting sheet:", e, json.dumps(get_sheets_res.content))
+                print("Error when getting sheet:", e)
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
