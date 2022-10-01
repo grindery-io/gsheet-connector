@@ -101,6 +101,8 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
         request = json.loads(text_data)
+        params = request.get("params", None)
+        id = request.get("id", None)
         method = request.get("method", None)
         if method == 'ping':
             response = {
@@ -110,8 +112,6 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             }
             await self.send_json(response)
             return
-        params = request.get("params", None)
-        id = request.get("id", None)
         access_token = ''
         spreadsheet_id = ''
         sheet_id = ''
