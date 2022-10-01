@@ -79,14 +79,13 @@ class FileListView(GenericAPIView):
         elif spreadsheet is not None and worksheet is None:
             get_sheets_url = REQUEST_PREFIX + 'sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
             get_sheets_header = {
-                'Authorization': 'Bearer ' + access_token,
-                'Content-Type': 'application/json'
+                'Authorization': 'Bearer ' + access_token
             }
             get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
             except BaseException as e:
-                print("Error when getting sheet:", e)
+                print("Error when getting sheet:", e, json.dumps(get_sheets_res.content))
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
@@ -127,14 +126,13 @@ class FileListView(GenericAPIView):
         elif spreadsheet is not None and worksheet is not None:
             get_sheets_url = REQUEST_PREFIX + 'sheets.googleapis.com/v4/spreadsheets/{}/'.format(spreadsheet)
             get_sheets_header = {
-                'Authorization': 'Bearer ' + access_token,
-                'Content-Type': 'application/json'
+                'Authorization': 'Bearer ' + access_token
             }
             get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
             except BaseException as e:
-                print("Error when getting sheet:", e)
+                print("Error when getting sheet:", e, json.dumps(get_sheets_res.content))
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
