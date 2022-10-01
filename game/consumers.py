@@ -172,7 +172,7 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                 if key.startswith('_'):
                     # print(key.replace("_", " ").strip())
                     values.append(fields[key])
-            payload = {"range": "{}!A1:Z1".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
+            payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
             try:
                 res = requests.post(headers=header, url=url, json=payload)
                 if res.status_code != 200:
