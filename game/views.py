@@ -85,7 +85,8 @@ class FileListView(GenericAPIView):
             get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
-            except:
+            except BaseException as e:
+                print("Error when getting sheet:", e)
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
@@ -132,7 +133,8 @@ class FileListView(GenericAPIView):
             get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
-            except:
+            except BaseException as e:
+                print("Error when getting sheet:", e)
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
@@ -206,7 +208,7 @@ class FirstRowView(GenericAPIView):
         access_token = params['authentication']
         token_type = "Bearer"
 
-        get_spreadsheets_url = 'https://www.googleapis.com/drive/v3/files/'
+        get_spreadsheets_url = REQUEST_PREFIX + 'www.googleapis.com/drive/v3/files/'
         get_spreadsheets_header = {
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': 'application/json'
@@ -260,7 +262,8 @@ class FirstRowView(GenericAPIView):
             get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
-            except:
+            except BaseException as e:
+                print("Error when getting sheet:", e)
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
@@ -307,7 +310,8 @@ class FirstRowView(GenericAPIView):
             get_sheets_res = requests.get(get_sheets_url, headers=get_sheets_header)
             try:
                 sheets_list = json.loads(get_sheets_res.content)['sheets']
-            except:
+            except BaseException as e:
+                print("Error when getting sheet:", e)
                 sheets_list = []
             sheets_list_array = []
             if sheets_list:
