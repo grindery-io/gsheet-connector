@@ -24,17 +24,17 @@ class newSpreadsheetRowTrigger:
         sheet_id = params['fields']['worksheet']
         access_token = params['authentication']
 
-        number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
+        number_of_rows = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token))
 
         while self.socket.connected:
             print('--------Triggering--GSheet-------spreadsheet_id---', spreadsheet_id, '--------sheet_id-------', sheet_id)
-            check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
+            check_number_of_row = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token))
             if check_number_of_row < number_of_rows:
                 number_of_rows = check_number_of_row
             if check_number_of_row > number_of_rows:
                 print('--------New-row-added----------spreadsheet_id', spreadsheet_id, '-----sheet_id----', sheet_id,
                       '-------added-------', check_number_of_row - number_of_rows)
-                response = get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows)
+                response = await asyncio.get_event_loop().run_in_executor(None, lambda: get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows))
                 number_of_rows = check_number_of_row
                 for row in response:
                     await self.socket.send_json({
@@ -65,12 +65,12 @@ class newWorksheetTrigger:
         sheet_id = params['fields']['worksheet']
         access_token = params['authentication']
 
-        number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
+        number_of_sheets = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_sheets(spreadsheet_id, access_token))
 
         while self.socket.connected:
-            check_number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
+            check_number_of_sheets = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_sheets(spreadsheet_id, access_token))
             if check_number_of_sheets > number_of_sheets:
-                response = get_new_sheets(spreadsheet_id, access_token, check_number_of_sheets - number_of_sheets)
+                response = await asyncio.get_event_loop().run_in_executor(None, lambda: get_new_sheets(spreadsheet_id, access_token, check_number_of_sheets - number_of_sheets))
                 number_of_sheets = check_number_of_sheets
                 for sheet in response:
                     await self.socket.send_json({
@@ -174,7 +174,7 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     values.append(fields[key])
             payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
             try:
-                res = requests.post(headers=header, url=url, json=payload)
+                res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload))
                 if res.status_code != 200:
                     fields = {}
             except Exception:
