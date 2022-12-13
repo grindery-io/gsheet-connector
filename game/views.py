@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+from itertools import zip_longest
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
@@ -149,13 +150,13 @@ class FileListView(GenericAPIView):
             out_put_fields = []
             sample_array = {}
             if worksheet_data:
-                for data, last_data in zip(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
+                for data, last_data in zip_longest(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
                     out_put_fields.append({
                         "key": data.replace(" ", "_"),
                         "label": data,
                         "type": "string"
                     })
-                    sample_array[data.replace(" ", "_")] = last_data
+                    sample_array[data.replace(" ", "_")] = last_data if last_data is not None else ""
 
             return Response(
                 {
@@ -326,13 +327,13 @@ class FirstRowView(GenericAPIView):
             out_put_fields = []
             sample_array = {}
             if worksheet_data:
-                for data, last_data in zip(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
+                for data, last_data in zip_longest(worksheet_data[0], worksheet_data[len(worksheet_data) - 1]):
                     out_put_fields.append({
                         "key": "_" + data.replace(" ", "_"),
                         "label": data,
                         "type": "string"
                     })
-                    sample_array[data.replace(" ", "_")] = last_data
+                    sample_array[data.replace(" ", "_")] = last_data if last_data is not None else ""
 
             return Response(
                 {
