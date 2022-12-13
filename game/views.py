@@ -390,6 +390,38 @@ class SheetListView(GenericAPIView):
         )
 
 
+class RowListView(GenericAPIView):
+
+    def get(self, request):
+        access_token = request.GET.get("access_token")
+        spread_sheet_id = request.GET.get("spread_sheet_id")
+        sheet = request.GET.get("sheet", "Sheet1") 
+        range_1 = request.GET.get("range_1", "")  
+        range_2 = request.GET.get("range_2", "")
+        range_query = "!{}:{}".format(range_1, range_2) if range_1 and range_2 else ""
+
+        get_sheets_url = REQUEST_PREFIX + \
+            'sheets.googleapis.com/v4/spreadsheets/{}/values/{}{}'.format(
+                spread_sheet_id, sheet, range_query)
+        header = {
+            'Authorization': 'Bearer ' + access_token,
+            'Content-Type': 'application/json'
+        }
+        res = requests.get(get_sheets_url, headers=header)
+
+        if(res.status_code == 400): 
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {
+                "result": True,
+                "data": json.loads(res.content)
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+
 def get_sheet_data_by_token(spread_sheet_id, sheet_id, access_token):
     header = {
         'Authorization': 'Bearer ' + access_token,
