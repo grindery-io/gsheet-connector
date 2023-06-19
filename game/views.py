@@ -38,13 +38,16 @@ class FileListView(GenericAPIView):
         }
         get_spreadsheets_params = {
             'token_type': token_type,
-            'pageSize': 1000
+            'pageSize': 1000,
+            'q': "mimeType = 'application/vnd.google-apps.spreadsheet'"
         }
 
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
         try:
             spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
-        except:
+        except e:
+            print("Error while getting spreadsheet list")
+            print(e)
             spreadsheets_list = []
         spreadsheets_list_array = []
         if spreadsheets_list:
