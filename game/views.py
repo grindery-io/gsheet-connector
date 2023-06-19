@@ -45,7 +45,7 @@ class FileListView(GenericAPIView):
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
         try:
             spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
-        except e:
+        except Exception as e:
             print("Error while getting spreadsheet list")
             print(e)
             spreadsheets_list = []
@@ -223,7 +223,7 @@ class FirstRowView(GenericAPIView):
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
         try:
             spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
-        except e:
+        except Exception as e:
             print("Error while getting spreadsheet list")
             print(e)
             spreadsheets_list = []
