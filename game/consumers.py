@@ -85,14 +85,13 @@ class newWorksheetTrigger:
             await asyncio.sleep(60)
 
 
-class getSpreadsheetRowTrigger:
+class getAllRowsTrigger:
     def __init__(self, socket, request):
         self.socket = socket
         self.request = request
 
     def start(self):
-        print(self.request)
-        return  asyncio.create_task(getSpreadsheetRowTrigger.main(self))
+        return  asyncio.create_task(getAllRowsTrigger.main(self))
 
     async def main(self):
         request = json.loads(self.request)
@@ -107,7 +106,7 @@ class getSpreadsheetRowTrigger:
                         'jsonrpc': '2.0',
                         'method': 'notifySignal',
                         'params': {
-                            'key': 'googleSheetNewRowTrigger',
+                            'key': 'getAllRows',
                             'sessionId': session_id,
                             'payload': result
                         }
@@ -164,8 +163,8 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     task = newSpreadsheetRowTrigger(self, text_data).start()
                 if request_key == 'newWorksheet':
                     task = newWorksheetTrigger(self, text_data).start()
-                if request_key == 'getSpreadsheetRow':
-                    task = getSpreadsheetRowTrigger(self, text_data).start()
+                if request_key == 'getAllRows':
+                    task = getAllRowsTrigger(self, text_data).start()
                 self.background_tasks.add(task)
                 def on_complete(t):
                     try:
