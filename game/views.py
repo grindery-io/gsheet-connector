@@ -44,10 +44,13 @@ class FileListView(GenericAPIView):
 
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
         try:
+            body = json.loads(get_spreadsheets_res.content)
+            if "files" not in body:
+                print(repr(body))
             spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
         except Exception as e:
             print("Error while getting spreadsheet list")
-            print(e)
+            print(repr(e))
             spreadsheets_list = []
         spreadsheets_list_array = []
         if spreadsheets_list:
