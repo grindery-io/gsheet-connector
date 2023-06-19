@@ -4,7 +4,7 @@ import asyncio
 import requests
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token, get_number_of_sheets,\
-    get_new_sheets
+    get_new_sheets, get_rows_by_token
 
 from .request_prefix import REQUEST_PREFIX
 
@@ -85,6 +85,36 @@ class newWorksheetTrigger:
             await asyncio.sleep(60)
 
 
+class getSpreadsheetRowTrigger:
+    def __init__(self, socket, request):
+        self.socket = socket
+        self.request = request
+
+    def start(self):
+        print(self.request)
+        return  asyncio.create_task(getSpreadsheetRowTrigger.main(self))
+
+    async def main(self):
+        request = json.loads(self.request)
+        params = request.get("params", None)
+        session_id = params['sessionId']
+        spreadsheet_id = params['fields']['spreadsheet']
+        sheet_id = params['fields']['worksheet']
+        access_token = params['authentication']
+        while self.socket.connected:
+            result = get_rows_by_token(spreadsheet_id, sheet_id, access_token)
+            await self.socket.send_json({
+                        'jsonrpc': '2.0',
+                        'method': 'notifySignal',
+                        'params': {
+                            'key': 'googleSheetNewRowTrigger',
+                            'sessionId': session_id,
+                            'payload': result
+                        }
+                    })
+            await asyncio.sleep(60)
+
+
 class SocketAdapter(AsyncJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -134,6 +164,8 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     task = newSpreadsheetRowTrigger(self, text_data).start()
                 if request_key == 'newWorksheet':
                     task = newWorksheetTrigger(self, text_data).start()
+                if request_key == 'getSpreadsheetRow':
+                    task = getSpreadsheetRowTrigger(self, text_data).start()
                 self.background_tasks.add(task)
                 def on_complete(t):
                     try:

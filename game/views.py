@@ -421,7 +421,6 @@ class RowListView(GenericAPIView):
         )
 
 
-
 def get_sheet_data_by_token(spread_sheet_id, sheet_id, access_token):
     header = {
         'Authorization': 'Bearer ' + access_token,
@@ -476,3 +475,12 @@ def get_new_sheets(spread_sheet_id, access_token, number_of_added_sheets):
     for sheet in sheets[len(sheets) - number_of_added_sheets: len(sheets)]:
         sheets_object.append(sheet["properties"]["title"])
     return sheets_object
+
+
+def get_rows_by_token(spread_sheet_id, sheet_id, access_token):
+    header = {
+        'Authorization': 'Bearer ' + access_token,
+        'Content-Type': 'application/json'
+    }
+    res = requests.get(url.format(spread_sheet_id, sheet_id), headers=header)
+    return json.loads(res.content)['values']
