@@ -4,7 +4,7 @@ import asyncio
 import requests
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token, get_number_of_sheets,\
-    get_new_sheets
+    get_new_sheets, get_rows_by_token
 
 from .request_prefix import REQUEST_PREFIX
 
@@ -24,17 +24,17 @@ class newSpreadsheetRowTrigger:
         sheet_id = params['fields']['worksheet']
         access_token = params['authentication']
 
-        number_of_rows = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
+        number_of_rows = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token))
 
         while self.socket.connected:
             print('--------Triggering--GSheet-------spreadsheet_id---', spreadsheet_id, '--------sheet_id-------', sheet_id)
-            check_number_of_row = get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token)
+            check_number_of_row = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_rows_by_token(spreadsheet_id, sheet_id, access_token))
             if check_number_of_row < number_of_rows:
                 number_of_rows = check_number_of_row
             if check_number_of_row > number_of_rows:
                 print('--------New-row-added----------spreadsheet_id', spreadsheet_id, '-----sheet_id----', sheet_id,
                       '-------added-------', check_number_of_row - number_of_rows)
-                response = get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows)
+                response = await asyncio.get_event_loop().run_in_executor(None, lambda: get_new_rows_by_token(spreadsheet_id, sheet_id, access_token, check_number_of_row - number_of_rows))
                 number_of_rows = check_number_of_row
                 for row in response:
                     await self.socket.send_json({
@@ -65,12 +65,12 @@ class newWorksheetTrigger:
         sheet_id = params['fields']['worksheet']
         access_token = params['authentication']
 
-        number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
+        number_of_sheets = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_sheets(spreadsheet_id, access_token))
 
         while self.socket.connected:
-            check_number_of_sheets = get_number_of_sheets(spreadsheet_id, access_token)
+            check_number_of_sheets = await asyncio.get_event_loop().run_in_executor(None, lambda: get_number_of_sheets(spreadsheet_id, access_token))
             if check_number_of_sheets > number_of_sheets:
-                response = get_new_sheets(spreadsheet_id, access_token, check_number_of_sheets - number_of_sheets)
+                response = await asyncio.get_event_loop().run_in_executor(None, lambda: get_new_sheets(spreadsheet_id, access_token, check_number_of_sheets - number_of_sheets))
                 number_of_sheets = check_number_of_sheets
                 for sheet in response:
                     await self.socket.send_json({
@@ -160,33 +160,54 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             await self.send_json(response)
 
         if method == 'runAction':
-            header = {
-                'Authorization': 'Bearer ' + access_token,
-                'Content-Type': 'application/json'
-            }
-            url = "{}sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
-                REQUEST_PREFIX, spreadsheet_id, sheet_id)
+            if request_key and request_key != '':
+                if request_key == 'getAllRows':
+                    try:
+                        payload = await asyncio.get_event_loop().run_in_executor(None, lambda: get_rows_by_token(spreadsheet_id, sheet_id, access_token))
+                        if payload.status_code == 200:
+                            res = json.loads(payload.content)['values']
+                        else:
+                            res = {}
+                    except Exception:
+                        res = 'Error'
+                    run_action_response = {
+                        'jsonrpc': '2.0',
+                        'result': {
+                            'key': 'getAllRows',
+                            'sessionId': session_id,
+                            'payload': res
+                        },
+                        'id': id
+                    }
+                    await self.send_json(run_action_response)
+            else:
+                header = {
+                    'Authorization': 'Bearer ' + access_token,
+                    'Content-Type': 'application/json'
+                }
+                url = "{}sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
+                    REQUEST_PREFIX, spreadsheet_id, sheet_id)
 
-            values = []
-            for key in fields:
-                if key.startswith('_'):
-                    # print(key.replace("_", " ").strip())
-                    values.append(fields[key])
-            payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
-            try:
-                res = requests.post(headers=header, url=url, json=payload)
-                if res.status_code != 200:
-                    fields = {}
-            except Exception:
-                fields = 'Error'
-            run_action_response = {
-                'jsonrpc': '2.0',
-                'result': {
-                    'key': 'googleSheetNewRowAction',
-                    'sessionId': session_id,
-                    'payload': fields
-                },
-                'id': id
-            }
-            await self.send_json(run_action_response)
+                values = []
+                for key in fields:
+                    if key.startswith('_'):
+                        # print(key.replace("_", " ").strip())
+                        values.append(fields[key])
+                payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
+                try:
+                    res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload))
+                    if res.status_code != 200:
+                        fields = {}
+                except Exception:
+                    fields = 'Error'
+                run_action_response = {
+                    'jsonrpc': '2.0',
+                    'result': {
+                        'key': 'googleSheetNewRowAction',
+                        'sessionId': session_id,
+                        'payload': fields
+                    },
+                    'id': id
+                }
+                await self.send_json(run_action_response)
 
