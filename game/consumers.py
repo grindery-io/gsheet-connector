@@ -85,35 +85,6 @@ class newWorksheetTrigger:
             await asyncio.sleep(60)
 
 
-class getAllRowsTrigger:
-    def __init__(self, socket, request):
-        self.socket = socket
-        self.request = request
-
-    def start(self):
-        return  asyncio.create_task(getAllRowsTrigger.main(self))
-
-    async def main(self):
-        request = json.loads(self.request)
-        params = request.get("params", None)
-        session_id = params['sessionId']
-        spreadsheet_id = params['fields']['spreadsheet']
-        sheet_id = params['fields']['worksheet']
-        access_token = params['authentication']
-        while self.socket.connected:
-            result = get_rows_by_token(spreadsheet_id, sheet_id, access_token)
-            await self.socket.send_json({
-                        'jsonrpc': '2.0',
-                        'method': 'notifySignal',
-                        'params': {
-                            'key': 'getAllRows',
-                            'sessionId': session_id,
-                            'payload': result
-                        }
-                    })
-            await asyncio.sleep(60)
-
-
 class SocketAdapter(AsyncJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -163,8 +134,6 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     task = newSpreadsheetRowTrigger(self, text_data).start()
                 if request_key == 'newWorksheet':
                     task = newWorksheetTrigger(self, text_data).start()
-                if request_key == 'getAllRows':
-                    task = getAllRowsTrigger(self, text_data).start()
                 self.background_tasks.add(task)
                 def on_complete(t):
                     try:
@@ -191,33 +160,54 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             await self.send_json(response)
 
         if method == 'runAction':
-            header = {
-                'Authorization': 'Bearer ' + access_token,
-                'Content-Type': 'application/json'
-            }
-            url = "{}sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
-                REQUEST_PREFIX, spreadsheet_id, sheet_id)
+            if request_key and request_key != '':
+                if request_key == 'getAllRows':
+                    try:
+                        payload = await asyncio.get_event_loop().run_in_executor(None, lambda: get_rows_by_token(spreadsheet_id, sheet_id, access_token))
+                        if payload.status_code == 200:
+                            res = json.loads(payload.content)['values']
+                        else:
+                            res = {}
+                    except Exception:
+                        res = 'Error'
+                    run_action_response = {
+                        'jsonrpc': '2.0',
+                        'result': {
+                            'key': 'getAllRows',
+                            'sessionId': session_id,
+                            'payload': res
+                        },
+                        'id': id
+                    }
+                    await self.send_json(run_action_response)
+            else:
+                header = {
+                    'Authorization': 'Bearer ' + access_token,
+                    'Content-Type': 'application/json'
+                }
+                url = "{}sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
+                    REQUEST_PREFIX, spreadsheet_id, sheet_id)
 
-            values = []
-            for key in fields:
-                if key.startswith('_'):
-                    # print(key.replace("_", " ").strip())
-                    values.append(fields[key])
-            payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
-            try:
-                res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload))
-                if res.status_code != 200:
-                    fields = {}
-            except Exception:
-                fields = 'Error'
-            run_action_response = {
-                'jsonrpc': '2.0',
-                'result': {
-                    'key': 'googleSheetNewRowAction',
-                    'sessionId': session_id,
-                    'payload': fields
-                },
-                'id': id
-            }
-            await self.send_json(run_action_response)
+                values = []
+                for key in fields:
+                    if key.startswith('_'):
+                        # print(key.replace("_", " ").strip())
+                        values.append(fields[key])
+                payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
+                try:
+                    res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload))
+                    if res.status_code != 200:
+                        fields = {}
+                except Exception:
+                    fields = 'Error'
+                run_action_response = {
+                    'jsonrpc': '2.0',
+                    'result': {
+                        'key': 'googleSheetNewRowAction',
+                        'sessionId': session_id,
+                        'payload': fields
+                    },
+                    'id': id
+                }
+                await self.send_json(run_action_response)
 

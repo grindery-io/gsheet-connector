@@ -451,5 +451,5 @@ def get_rows_by_token(spread_sheet_id, sheet_id, access_token):
         'Authorization': 'Bearer ' + access_token,
         'Content-Type': 'application/json'
     }
-    res = requests.get(url.format(spread_sheet_id, sheet_id), headers=header)
-    return json.loads(res.content)['values']
+    return requests.get(url.format(spread_sheet_id, sheet_id), headers=header)
+
