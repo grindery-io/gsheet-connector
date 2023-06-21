@@ -158,28 +158,26 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     'id': id
                 }
             await self.send_json(response)
-
-        if method == 'runAction':
-            if request_key and request_key != '':
-                if request_key == 'getAllRows':
-                    try:
-                        payload = await asyncio.get_event_loop().run_in_executor(None, lambda: get_rows_by_token(spreadsheet_id, sheet_id, access_token))
-                        if payload.status_code == 200:
-                            res = json.loads(payload.content)['values']
-                        else:
-                            res = {}
-                    except Exception:
-                        res = 'Error'
-                    run_action_response = {
-                        'jsonrpc': '2.0',
-                        'result': {
-                            'key': 'getAllRows',
-                            'sessionId': session_id,
-                            'payload': res
-                        },
-                        'id': id
-                    }
-                    await self.send_json(run_action_response)
+        elif method == 'runAction':
+            if request_key  == 'getAllRows':
+                try:
+                    payload = await asyncio.get_event_loop().run_in_executor(None, lambda: get_rows_by_token(spreadsheet_id, sheet_id, access_token))
+                    if payload.status_code == 200:
+                        res = json.loads(payload.content)['values']
+                    else:
+                        res = {}
+                except Exception:
+                    res = 'Error'
+                run_action_response = {
+                    'jsonrpc': '2.0',
+                    'result': {
+                        'key': 'getAllRows',
+                        'sessionId': session_id,
+                        'payload': res
+                    },
+                    'id': id
+                }
+                await self.send_json(run_action_response)
             else:
                 header = {
                     'Authorization': 'Bearer ' + access_token,
@@ -195,10 +193,11 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                         values.append(fields[key])
                 payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
                 try:
-                    res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload))
+                    res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload, timeout=15))
                     if res.status_code != 200:
                         fields = {}
-                except Exception:
+                except Exception as e:
+                    print("Error when adding row:", repr(e))
                     fields = 'Error'
                 run_action_response = {
                     'jsonrpc': '2.0',
@@ -210,4 +209,13 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     'id': id
                 }
                 await self.send_json(run_action_response)
-
+        else:
+            response = {
+                'jsonrpc': '2.0',
+                'error': {
+                    'code': 1,
+                    'message': 'unknown method'
+                },
+                'id': id
+            }
+            await self.send_json(response)
