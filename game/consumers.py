@@ -4,7 +4,7 @@ import asyncio
 import requests
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from .views import get_sheet_data_by_token, get_new_rows_by_token, get_number_of_rows_by_token, get_number_of_sheets,\
-    get_new_sheets
+    get_new_sheets, get_rows_by_token
 
 from .request_prefix import REQUEST_PREFIX
 
@@ -158,35 +158,64 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     'id': id
                 }
             await self.send_json(response)
+        elif method == 'runAction':
+            if request_key  == 'getAllRows':
+                try:
+                    payload = await asyncio.get_event_loop().run_in_executor(None, lambda: get_rows_by_token(spreadsheet_id, sheet_id, access_token))
+                    if payload.status_code == 200:
+                        res = json.loads(payload.content)['values']
+                    else:
+                        res = {}
+                except Exception:
+                    res = 'Error'
+                run_action_response = {
+                    'jsonrpc': '2.0',
+                    'result': {
+                        'key': 'getAllRows',
+                        'sessionId': session_id,
+                        'payload': res
+                    },
+                    'id': id
+                }
+                await self.send_json(run_action_response)
+            else:
+                header = {
+                    'Authorization': 'Bearer ' + access_token,
+                    'Content-Type': 'application/json'
+                }
+                url = "{}sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
+                    REQUEST_PREFIX, spreadsheet_id, sheet_id)
 
-        if method == 'runAction':
-            header = {
-                'Authorization': 'Bearer ' + access_token,
-                'Content-Type': 'application/json'
-            }
-            url = "{}sheets.googleapis.com/v4/spreadsheets/{}/values/{}!A1:ZZZ9999:append?valueInputOption=USER_ENTERED".format(
-                REQUEST_PREFIX, spreadsheet_id, sheet_id)
-
-            values = []
-            for key in fields:
-                if key.startswith('_'):
-                    # print(key.replace("_", " ").strip())
-                    values.append(fields[key])
-            payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
-            try:
-                res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload))
-                if res.status_code != 200:
-                    fields = {}
-            except Exception:
-                fields = 'Error'
-            run_action_response = {
+                values = []
+                for key in fields:
+                    if key.startswith('_'):
+                        # print(key.replace("_", " ").strip())
+                        values.append(fields[key])
+                payload = {"range": "{}!A1:ZZZ9999".format(sheet_id), "majorDimension": "ROWS", "values": [values]}
+                try:
+                    res = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(headers=header, url=url, json=payload, timeout=15))
+                    if res.status_code != 200:
+                        fields = {}
+                except Exception as e:
+                    print("Error when adding row:", repr(e))
+                    fields = 'Error'
+                run_action_response = {
+                    'jsonrpc': '2.0',
+                    'result': {
+                        'key': 'googleSheetNewRowAction',
+                        'sessionId': session_id,
+                        'payload': fields
+                    },
+                    'id': id
+                }
+                await self.send_json(run_action_response)
+        else:
+            response = {
                 'jsonrpc': '2.0',
-                'result': {
-                    'key': 'googleSheetNewRowAction',
-                    'sessionId': session_id,
-                    'payload': fields
+                'error': {
+                    'code': 1,
+                    'message': 'unknown method'
                 },
                 'id': id
             }
-            await self.send_json(run_action_response)
-
+            await self.send_json(response)

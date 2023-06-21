@@ -39,13 +39,19 @@ class FileListView(GenericAPIView):
         }
         get_spreadsheets_params = {
             'token_type': token_type,
-            'pageSize': 1000
+            'pageSize': 1000,
+            'q': "mimeType = 'application/vnd.google-apps.spreadsheet'"
         }
 
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
         try:
+            body = json.loads(get_spreadsheets_res.content)
+            if "files" not in body:
+                print(repr(body))
             spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
-        except:
+        except Exception as e:
+            print("Error while getting spreadsheet list")
+            print(repr(e))
             spreadsheets_list = []
         spreadsheets_list_array = []
         if spreadsheets_list:
@@ -214,13 +220,16 @@ class FirstRowView(GenericAPIView):
         }
         get_spreadsheets_params = {
             'token_type': token_type,
-            'pageSize': 1000
+            'pageSize': 1000,
+            'q': "mimeType = 'application/vnd.google-apps.spreadsheet'"
         }
 
         get_spreadsheets_res = requests.get(get_spreadsheets_url, headers=get_spreadsheets_header, params=get_spreadsheets_params)
         try:
             spreadsheets_list = json.loads(get_spreadsheets_res.content)['files']
-        except:
+        except Exception as e:
+            print("Error while getting spreadsheet list")
+            print(e)
             spreadsheets_list = []
         spreadsheets_list_array = []
         if spreadsheets_list:
@@ -444,3 +453,12 @@ def get_new_sheets(spread_sheet_id, access_token, number_of_added_sheets):
     for sheet in sheets[len(sheets) - number_of_added_sheets: len(sheets)]:
         sheets_object.append(sheet["properties"]["title"])
     return sheets_object
+
+
+def get_rows_by_token(spread_sheet_id, sheet_id, access_token):
+    header = {
+        'Authorization': 'Bearer ' + access_token,
+        'Content-Type': 'application/json'
+    }
+    return requests.get(url.format(spread_sheet_id, sheet_id), headers=header)
+
