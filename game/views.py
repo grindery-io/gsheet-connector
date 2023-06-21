@@ -553,8 +553,8 @@ class RowListView(GenericAPIView):
                 for i, row in enumerate(worksheet_data):
                     cell_data = {
                         "key": "row" + str(i + 1),
-                        "label": row[0],
-                            "type": "string",
+                        "label": "Row" + str(i + 1),
+                        "type": "string",
                         "list": True
                     }
                     out_put_fields.append(cell_data)
