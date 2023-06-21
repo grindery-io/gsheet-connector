@@ -550,18 +550,16 @@ class RowListView(GenericAPIView):
 
             if worksheet_data:
                 headers = worksheet_data[0]
-                for row in worksheet_data:
-                    for i in range(len(headers)):
-                        row_data = {}
-                        row_data["key"] = "row" + \
-                            str(worksheet_data.index(row) + 1)
-                        row_data["label"] = row[i]
-                        row_data["type"] = "string"
-                        row_data["list"] = True
-                        out_put_fields.append(row_data)
-                    for i, row in enumerate(worksheet_data):
-                        row_data = [cell for cell in row]
-                        sample_array["row" + str(i + 1)] = row_data
+                for i, row in enumerate(worksheet_data):
+                    cell_data = {
+                        "key": "row" + str(i + 1),
+                        "label": row[0],
+                            "type": "string",
+                        "list": True
+                    }
+                    out_put_fields.append(cell_data)
+                    row_data = [cell for cell in row]
+                    sample_array["row" + str(i + 1)] = row_data
 
             return Response(
                 {
