@@ -126,7 +126,7 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
             spreadsheet_id = fields['spreadsheet']
             sheet_id = fields['worksheet']
 
-            access_token = params['authentication']
+            access_token = params.get('authentication', '')
 
         if method == 'setupSignal':
             if request_key and request_key != '':
