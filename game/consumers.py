@@ -148,12 +148,15 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
                     task = newWorksheetTrigger(self, text_data).start()
                 self.background_tasks.add(task)
                 def on_complete(t):
+                    self.background_tasks.discard(t)
                     try:
                         t.result()
                     except BaseException as e:
                         print(request_key, ": Task raised error: ", e)
                     if self.connected:
-                        self.close()
+                        task = asyncio.create_task(self.close())
+                        self.background_tasks.add(task)
+                        task.add_done_callback(self.background_tasks.discard)
                 task.add_done_callback(on_complete)
                 response = {
                     'jsonrpc': '2.0',
