@@ -119,14 +119,26 @@ class SocketAdapter(AsyncJsonWebsocketConsumer):
         fields = ''
         request_key = ''
 
-        if params is not None and params != {}:
+        try:
             request_key = params['key']
             session_id = params['sessionId']
             fields = params['fields']
             spreadsheet_id = fields['spreadsheet']
             sheet_id = fields['worksheet']
 
-            access_token = params.get('authentication', '')
+            access_token = params['authentication']
+        except Exception as e:
+            print(repr(e))
+            response = {
+                'jsonrpc': '2.0',
+                'error': {
+                    'code': 1,
+                    'message': 'invalid parameter'
+                },
+                'id': id
+            }
+            await self.send_json(response)
+            return
 
         if method == 'setupSignal':
             if request_key and request_key != '':
