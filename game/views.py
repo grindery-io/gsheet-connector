@@ -414,7 +414,11 @@ def get_number_of_rows_by_token(spread_sheet_id, sheet_id, access_token):
         'Content-Type': 'application/json'
     }
     res = requests.get(url.format(spread_sheet_id, sheet_id), headers=header)
-    return len(json.loads(res.content)['values'])
+    response_json = json.loads(res.content)
+    if 'values' in response_json:
+        return len(response_json['values'])
+    else:
+        return 0
 
 
 def get_new_rows_by_token(spread_sheet_id, sheet_id, access_token, number_of_added_rows):
